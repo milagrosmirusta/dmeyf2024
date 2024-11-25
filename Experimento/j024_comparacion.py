@@ -1,6 +1,11 @@
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
+
+# Función para formatear en miles
+def format_miles(x, pos):
+    return f'{x:,.0f}'  # Formato con separadores de miles
 
 # Rutas y parámetros
 input_dir = "/home/mili_irusta/buckets/b1/exp/KA4210/"
@@ -14,7 +19,7 @@ semillas = [173717, 481129, 839203, 761081, 594017]
 print("Cargando y procesando datos reales...")
 datos_reales = pd.read_csv(dataset_competencia, compression="gzip")
 datos_reales = datos_reales[datos_reales["foto_mes"] == training_month]
-datos_reales["clase_real"] = datos_reales["clase_ternaria"].apply(lambda x: 1 if x in ["BAJA+1", "BAJA+2"] else 0)
+datos_reales["clase_real"] = datos_reales["clase_ternaria"].apply(lambda x: 1 if x in ["BAJA+2"] else 0)
 datos_reales = datos_reales[["numero_de_cliente", "clase_real"]]
 print("Distribución de clase_real:")
 print(datos_reales["clase_real"].value_counts())
@@ -23,7 +28,8 @@ print(datos_reales["clase_real"].value_counts())
 def calcular_ganancia_detallada(data):
     TP = ((data["Predicted"] == 1) & (data["clase_real"] == 1)).sum()
     FP = ((data["Predicted"] == 1) & (data["clase_real"] == 0)).sum()
-    return TP * 273000 - FP * 7000, TP, FP
+    ganancia = (TP * 273000) - (FP * 7000)
+    return ganancia, TP, FP
 
 # Inicializar estructuras para almacenar resultados
 ganancias_semillas_original = {semilla: {corte: None for corte in cortes} for semilla in semillas}
@@ -69,6 +75,11 @@ for semilla in semillas:
     plt.title(f"Comparación de Ganancias por Corte - Semilla {semilla}")
     plt.legend()
     plt.grid(True)
+
+    # Aplicar el formateador al eje y
+    formatter = FuncFormatter(format_miles)
+    plt.gca().yaxis.set_major_formatter(formatter)
+
     plt.tight_layout()
     plt.savefig(os.path.join(experimento_dir, f"ganancias_semilla_{semilla}.png"))
     plt.show()
@@ -86,6 +97,11 @@ plt.ylabel("Ganancia Promedio")
 plt.title("Comparación de Ganancias Promedio por Modelo y Corte")
 plt.legend()
 plt.grid(True)
+
+# Aplicar el formateador al eje y
+formatter = FuncFormatter(format_miles)
+plt.gca().yaxis.set_major_formatter(formatter)
+
 plt.tight_layout()
 plt.savefig(os.path.join(experimento_dir, "ganancias_promedio.png"))
 plt.show()
